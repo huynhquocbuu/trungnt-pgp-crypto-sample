@@ -11,7 +11,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CryptoModel {
-    @JsonProperty("crypto-type")
+    //@JsonProperty("crypto-type")
     private String cryptoType;
     private String data;
 }

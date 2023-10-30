@@ -15,12 +15,12 @@ public class CryptoService {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         PGPHelper.getInstance().encryptAndSign(blankText.getBytes(), out);
         String encryptText = out.toString();
-        log.info("encryptText: "+ encryptText);
+        //log.info("encryptText: "+ encryptText);
 
-        ByteArrayOutputStream desStream = new ByteArrayOutputStream();
-        PGPHelper.getInstance().decryptAndVerifySignature(encryptText.getBytes(), desStream);
-        String decryptText = desStream.toString();
-        log.info("decryptText: "+ decryptText);
+        //ByteArrayOutputStream desStream = new ByteArrayOutputStream();
+        //PGPHelper.getInstance().decryptAndVerifySignature(encryptText.getBytes(), desStream);
+        //String decryptText = desStream.toString();
+        //log.info("decryptText: "+ decryptText);
 
         return new CryptoModel("pgp-encrypt",  encryptText);
     }

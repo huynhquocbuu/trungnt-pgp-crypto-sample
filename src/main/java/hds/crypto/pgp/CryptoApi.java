@@ -18,12 +18,18 @@ public class CryptoApi {
 
     @PostMapping("/encrypt")
     public CryptoModel encrypt(@RequestBody CryptoModel request) throws Exception {
-        return cryptoService.pgpEncrypt(request.getData());
+        log.info("-----Encrypt Api: blankText-----: \n" + request.getData());
+        CryptoModel resp = cryptoService.pgpEncrypt(request.getData());
+        log.info("------Encrypt Api: encryptedText------: \n" +  resp.getData());
+        return resp;
     }
 
     @PostMapping("/decrypt")
     public CryptoModel decrypt(@RequestBody CryptoModel request) throws Exception {
-        return cryptoService.pgpDecrypt(request.getData());
+        log.info("-----Decrypt Api: encryptedText-----: \n" + request.getData());
+        CryptoModel resp = cryptoService.pgpDecrypt(request.getData());
+        log.info("------Decrypt Api: decryptedText------: \n" + resp.getData());
+        return resp;
     }
 
     @PostMapping("/sign")
