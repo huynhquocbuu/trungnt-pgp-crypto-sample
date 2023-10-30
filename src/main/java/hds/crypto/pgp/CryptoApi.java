@@ -16,20 +16,28 @@ public class CryptoApi {
         this.cryptoService = cryptoService;
     }
 
-    @PostMapping("/encrypt")
-    public CryptoModel encrypt(@RequestBody CryptoModel request) throws Exception {
-        log.info("-----Encrypt Api: blankText-----: \n" + request.getData());
-        CryptoModel resp = cryptoService.pgpEncrypt(request.getData());
-        log.info("------Encrypt Api: encryptedText------: \n" +  resp.getData());
-        return resp;
+    @PostMapping(value = "/binding-text", consumes = "text/plain")
+    public String bindingSample(@RequestBody String text) throws Exception {
+        CryptoModel resp = cryptoService.pgpDecrypt(text);
+        log.info("------Encrypt Api tttt: encryptedText------: \n" +  resp.getData());
+        return text;
     }
 
-    @PostMapping("/decrypt")
-    public CryptoModel decrypt(@RequestBody CryptoModel request) throws Exception {
-        log.info("-----Decrypt Api: encryptedText-----: \n" + request.getData());
-        CryptoModel resp = cryptoService.pgpDecrypt(request.getData());
+    @PostMapping(value = "/encrypt", consumes = "text/plain", produces = "text/plain")
+    //@Produces()
+    public String encrypt(@RequestBody String text) throws Exception {
+        log.info("-----Encrypt Api: blankText-----: \n" + text);
+        CryptoModel resp = cryptoService.pgpEncrypt(text);
+        log.info("------Encrypt Api: encryptedText------: \n" +  resp.getData());
+        return resp.getData();
+    }
+
+    @PostMapping(value = "/decrypt", consumes = "text/plain", produces = "text/plain")
+    public String decrypt(@RequestBody String text) throws Exception {
+        log.info("-----Decrypt Api: encryptedText-----: \n" + text);
+        CryptoModel resp = cryptoService.pgpDecrypt(text);
         log.info("------Decrypt Api: decryptedText------: \n" + resp.getData());
-        return resp;
+        return resp.getData();
     }
 
     @PostMapping("/sign")
