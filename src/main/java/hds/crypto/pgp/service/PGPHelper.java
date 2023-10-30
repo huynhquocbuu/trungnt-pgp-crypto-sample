@@ -23,9 +23,9 @@ public class PGPHelper {
     private static final String DEFAULT_SERVICE_CODE = "ONE_SERVICE";
 
     private PGPPublicKey encryptionPublicKey;
-    private PGPPublicKey signaturePublicKey;
+    private PGPPublicKey signaturePublicKey;//public key cua momo
     private PGPSecretKeyRingCollection pgpSec;
-    private PGPSecretKey secretKey;
+    private PGPSecretKey secretKey;//nhet vao private key cua HDS
     private PGPSignatureGenerator signatureGenerator;
     private char[] password;
 
@@ -46,7 +46,19 @@ public class PGPHelper {
         readKey(pubStream, null, null, priStream);
 
     }
+//BuuHQ
+    private PGPHelper(String publicKeyPath, String privateKeyPath, String password,
+                      Long encryptpublicKeyId,
+                      Long signaturePublicKeyId,
+                      String momoPubicKeyPath) throws Exception, FileNotFoundException {
 
+        InputStream pubStream = new FileInputStream(new File(publicKeyPath));
+        InputStream priStream = new FileInputStream(new File(privateKeyPath));
+        this.password = password.toCharArray();
+
+        InputStream momoPubStream = new FileInputStream(new File(momoPubicKeyPath));
+        readKeyBuuHQ(pubStream, encryptpublicKeyId, signaturePublicKeyId, priStream, momoPubStream);
+    }
     private PGPHelper(String publicKeyPath, String privateKeyPath, String password,
                       Long encryptpublicKeyId,
                       Long signaturePublicKeyId) throws Exception, FileNotFoundException {
@@ -55,6 +67,29 @@ public class PGPHelper {
         InputStream priStream = new FileInputStream(new File(privateKeyPath));
         this.password = password.toCharArray();
         readKey(pubStream, encryptpublicKeyId, signaturePublicKeyId, priStream);
+    }
+
+    private void readKeyBuuHQ(InputStream pubStream, Long encryptpublicKeyId, Long signaturePublicKeyId, InputStream priStream,
+                              InputStream momoPubStream) throws Exception {
+        try {
+            //readPublicKey(pubStream, encryptpublicKeyId, signaturePublicKeyId);
+            readPublicKeyBuuHQ(pubStream, encryptpublicKeyId, signaturePublicKeyId, momoPubStream);
+            this.pgpSec = new PGPSecretKeyRingCollection(PGPUtil.getDecoderStream(priStream));
+            this.secretKey = readSecretKey(pgpSec);
+
+        }
+        catch (IOException | PGPException | NoSuchProviderException ex) {
+            throw new Exception(ex.getMessage(), ex);
+        }
+        finally {
+            try {
+                pubStream.close();
+                priStream.close();
+            }
+            catch (IOException ex) {
+                // NOOP
+            }
+        }
     }
 
     private void readKey(InputStream pubStream, Long encryptpublicKeyId, Long signaturePublicKeyId, InputStream priStream) throws Exception {
@@ -78,6 +113,14 @@ public class PGPHelper {
         }
     }
 
+    public static void initBuuHQ(String privateKeyPath, String publicKeyPath, String password,
+                                      String momoPublicKeyPath) throws Exception, FileNotFoundException {
+        //init(DEFAULT_SERVICE_CODE, privateKeyPath, publicKeyPath, password, null, null);
+        initBuuHQ(DEFAULT_SERVICE_CODE, privateKeyPath, publicKeyPath, password, null, null,
+                momoPublicKeyPath);
+    }
+
+
     public static void init(String privateKeyPath, String publicKeyPath, String password) throws Exception, FileNotFoundException {
         init(DEFAULT_SERVICE_CODE, privateKeyPath, publicKeyPath, password, null, null);
     }
@@ -94,6 +137,13 @@ public class PGPHelper {
         MAP.put(serviceCode, new PGPHelper(publicKey, privateKey, password));
     }
 
+
+    public static void initBuuHQ(String serviceCode, String privateKeyPath, String publicKeyPath, String password, Long encryptionPublicKeyId, Long verifyPublicKeyId,
+                                 String momoPublicKeyPath) throws Exception, FileNotFoundException {
+        //MAP.put(serviceCode, new PGPHelper(publicKeyPath, privateKeyPath, password, encryptionPublicKeyId, verifyPublicKeyId));
+        MAP.put(serviceCode, new PGPHelper(publicKeyPath, privateKeyPath, password, encryptionPublicKeyId, verifyPublicKeyId,
+                momoPublicKeyPath));
+    }
     public static void init(String serviceCode, String privateKeyPath, String publicKeyPath, String password, Long encryptionPublicKeyId, Long verifyPublicKeyId) throws Exception, FileNotFoundException {
         MAP.put(serviceCode, new PGPHelper(publicKeyPath, privateKeyPath, password, encryptionPublicKeyId, verifyPublicKeyId));
     }
@@ -232,6 +282,65 @@ public class PGPHelper {
 
     }
 
+    //buhq
+    private void readMomoPublicKey(InputStream in) throws IOException, PGPException {
+        in = PGPUtil.getDecoderStream(in);
+        PGPPublicKeyRingCollection pkCol = new PGPPublicKeyRingCollection(in);
+        PGPPublicKeyRing pkRing;
+        Iterator it = pkCol.getKeyRings();
+        while (it.hasNext()) {
+            pkRing = (PGPPublicKeyRing) it.next();
+            Iterator pkIt = pkRing.getPublicKeys();
+            while (pkIt.hasNext()) {
+                PGPPublicKey key = (PGPPublicKey) pkIt.next();
+                if (key.isEncryptionKey()) {
+                    signaturePublicKey = key;
+                    break;
+                }
+            }
+        }
+
+    }
+
+    private void readPublicKeyBuuHQ(InputStream in, Long publicKeyId, Long signaturePublicKeyId,
+                                    InputStream momoPublicKeyStream) throws IOException, PGPException {
+        in = PGPUtil.getDecoderStream(in);
+        PGPPublicKeyRingCollection pkCol = new PGPPublicKeyRingCollection(in);
+        PGPPublicKeyRing pkRing;
+        Iterator it = pkCol.getKeyRings();
+        if (publicKeyId == null || publicKeyId == -1) {
+            while (it.hasNext()) {
+                pkRing = (PGPPublicKeyRing) it.next();
+                Iterator pkIt = pkRing.getPublicKeys();
+                while (pkIt.hasNext()) {
+                    PGPPublicKey key = (PGPPublicKey) pkIt.next();
+                    if (key.isEncryptionKey()) {
+                        encryptionPublicKey = key;
+                        break;
+                    }
+                }
+            }
+
+        }
+        else {
+            encryptionPublicKey = pkCol.getPublicKey(publicKeyId);
+        }
+        if (encryptionPublicKey == null) {
+            throw new PGPException("Invalid public Key");
+        }
+        if (signaturePublicKeyId == null || signaturePublicKeyId == -1) {
+            //signaturePublicKey = encryptionPublicKey;
+
+            //buuhq
+            //edit signaturePublicKey = ?
+            //InputStream momoPublicKeyStream = new FileInputStream(new File("/Users/kitaro/private-area/projects/java-stacks/hds-crypto-int-momo/gpg-rsa/momo-pub.asc"));
+            readMomoPublicKey(momoPublicKeyStream);
+        }
+        else {
+            signaturePublicKey = pkCol.getPublicKey(signaturePublicKeyId);
+        }
+    }
+
     private void readPublicKey(InputStream in, Long publicKeyId, Long signaturePublicKeyId) throws IOException, PGPException {
         in = PGPUtil.getDecoderStream(in);
         PGPPublicKeyRingCollection pkCol = new PGPPublicKeyRingCollection(in);
@@ -258,7 +367,12 @@ public class PGPHelper {
             throw new PGPException("Invalid public Key");
         }
         if (signaturePublicKeyId == null || signaturePublicKeyId == -1) {
-            signaturePublicKey = encryptionPublicKey;
+            //signaturePublicKey = encryptionPublicKey;
+
+            //buuhq
+            //edit signaturePublicKey = ?
+            InputStream momoPublicKeyStream = new FileInputStream(new File("/Users/kitaro/private-area/projects/java-stacks/hds-crypto-int-momo/gpg-rsa/momo-pub.asc"));
+            readMomoPublicKey(momoPublicKeyStream);
         }
         else {
             signaturePublicKey = pkCol.getPublicKey(signaturePublicKeyId);
@@ -307,7 +421,7 @@ public class PGPHelper {
     private PGPSignatureGenerator createSignatureGenerator() throws NoSuchProviderException, NoSuchAlgorithmException, PGPException {
         if (signatureGenerator == null) {
             PGPPrivateKey pgpPrivKey = secretKey.extractPrivateKey(password, "BC");
-            PGPPublicKey internalPublicKey = secretKey.getPublicKey();
+            PGPPublicKey internalPublicKey = secretKey.getPublicKey();//
             PGPSignatureGenerator generator = new PGPSignatureGenerator(internalPublicKey.getAlgorithm(), HashAlgorithmTags.SHA1, "BC");
             generator.initSign(PGPSignature.BINARY_DOCUMENT, pgpPrivKey);
             for (Iterator i = internalPublicKey.getUserIDs(); i.hasNext();) {

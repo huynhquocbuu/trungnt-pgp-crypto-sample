@@ -18,12 +18,16 @@ public class MomoApplication {
 		ApplicationContext context = SpringApplication.run(MomoApplication.class, args);
 		AppConfig appConfig = context.getBean(AppConfig.class);
 		log.info("app.config.location = " + appConfig.getConfigLocation());
-		PGPHelper.init(appConfig.getHdsPrivateKeyPath(), appConfig.getHdsPublicKeyPath(), appConfig.getHdsPassword());
+
+		PGPHelper.initBuuHQ(appConfig.getHdsPrivateKeyPath(), appConfig.getHdsPublicKeyPath(), appConfig.getHdsPassword(),
+				appConfig.getMomoPublicKeyPath());
+		//PGPHelper.init(appConfig.getHdsPrivateKeyPath(), appConfig.getHdsPublicKeyPath(), appConfig.getHdsPassword());
 
 	}
 
 	@Component
 	class AppConfig {
+
 		@Value("${crypto.decrypt.pgp.rsa.hds.private-key}")
 		private String hdsPrivateKeyPath;
 		@Value("${crypto.encrypt.pgp.rsa.hds.public-key}")
@@ -61,6 +65,7 @@ public class MomoApplication {
 		public String getMomoPublicKeyPath(){
 			return momoPublicKeyPath;
 		}
+
 	}
 
 }
